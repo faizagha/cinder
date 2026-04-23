@@ -2,7 +2,7 @@ spring:
   application:
     name: note-service
 
-  # H2 in-memory database for V1
+  # Postgres
   datasource:
     url: jdbc:postgresql://localhost:5432/cinderdb
     driver-class-name: org.postgresql.Driver
@@ -11,24 +11,20 @@ spring:
 
   # JPA / Hibernate
   jpa:
-    # Flyway off until we write a migration
-    flyway:
-      enabled: false
     hibernate:
-      ddl-auto: update # auto-create/update schema, good for dev but not for prod
-    show-sql: true # logs every SQL query, useful for debugging
+      ddl-auto: validate
+    show-sql: true
     properties:
       hibernate:
-        format_sql: true # pretty-prints the logged SQL
+        format_sql: true
         jdbc:
-          time_zone: UTC # forces UTC for all timestamps, no surprises
-    open-in-view: false # disables OSIV anti-pattern (the warning from before)
+          time_zone: UTC
+    open-in-view: false
 
-  # Flyway is on classpath but we're letting ddl-auto own the schema for now
+  # Flyway — top-level, sibling of jpa
   flyway:
-    enabled: false # turn on when we add real migrations later
+    enabled: true
 
-# Server
 server:
   port: 8080
 
@@ -36,10 +32,9 @@ cinder:
   cors:
     allowed-origins: http://localhost:8000
 
-# Logging
 logging:
   level:
     root: INFO
-    dev.cinder: DEBUG # verbose for our own code
-    org.hibernate.SQL: DEBUG # log SQL statements
-    org.hibernate.orm.jdbc.bind: TRACE # log parameter bindings (great for debugging)
+    dev.cinder: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.orm.jdbc.bind: TRACE
