@@ -4,15 +4,18 @@ spring:
 
   # H2 in-memory database for V1
   datasource:
-    url: jdbc:h2:mem:cinderdb
-    driver-class-name: org.h2.Driver
-    username: sa
+    url: jdbc:postgresql://localhost:5432/cinderdb
+    driver-class-name: org.postgresql.Driver
+    username: faizagha
     password: ""
 
   # JPA / Hibernate
   jpa:
+    # Flyway off until we write a migration
+    flyway:
+      enabled: false
     hibernate:
-      ddl-auto: create-drop # rebuild schema every restart, fine for dev
+      ddl-auto: update # auto-create/update schema, good for dev but not for prod
     show-sql: true # logs every SQL query, useful for debugging
     properties:
       hibernate:
@@ -20,12 +23,6 @@ spring:
         jdbc:
           time_zone: UTC # forces UTC for all timestamps, no surprises
     open-in-view: false # disables OSIV anti-pattern (the warning from before)
-
-  # H2 web console at http://localhost:8080/h2-console
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
 
   # Flyway is on classpath but we're letting ddl-auto own the schema for now
   flyway:
