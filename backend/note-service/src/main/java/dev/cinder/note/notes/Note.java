@@ -31,8 +31,7 @@ public class Note {
     private String id;
 
     /** AES-GCM encrypted content, base64-encoded. server is blind to plaintext. */
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String ciphertext;
 
     /**
