@@ -1,0 +1,1238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINDER</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bone:    #ece6d2;
+      --bone-2:  #e3dcc4;
+      --paper:   #faf6ea;
+      --ink:     #181818;
+      --ink-2:   #2a2a2a;
+      --muted:   #6e6356;
+      --accent:  #c1272d;
+      --warn:    #c1272d;
+
+      --serif:  'Instrument Serif', Georgia, serif;
+      --sans:   'Space Grotesk', system-ui, sans-serif;
+      --mono:   'JetBrains Mono', ui-monospace, monospace;
+
+      --hairline: 1px solid var(--ink);
+      --rule:     2px solid var(--ink);
+      --thick:    4px solid var(--ink);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bone);
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ──────────────── BACKGROUND TEXTURE ──────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        repeating-linear-gradient(0deg, transparent 0 47px, rgba(24,24,24,0.04) 47px 48px);
+      z-index: 0;
+    }
+
+    /* ──────────────── PAGE GRID ──────────────── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 32px 48px 0;
+    }
+
+    @media (max-width: 720px) {
+      .page { padding: 20px 18px 0; }
+    }
+
+    /* ──────────────── HEADER ──────────────── */
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 24px;
+      padding-bottom: 20px;
+      border-bottom: var(--rule);
+    }
+
+    .wordmark {
+      font-family: var(--serif);
+      font-size: clamp(72px, 13vw, 168px);
+      line-height: 0.85;
+      letter-spacing: -0.02em;
+      font-weight: 400;
+    }
+
+    .wordmark .dot {
+      color: var(--accent);
+    }
+
+    .wordmark .ital {
+      font-style: italic;
+      font-size: 0.55em;
+      vertical-align: 0.25em;
+      letter-spacing: -0.02em;
+      margin-left: -0.15em;
+      color: var(--muted);
+    }
+
+    .mode-switch {
+      display: flex;
+      align-items: stretch;
+      border: var(--thick);
+      background: var(--paper);
+      align-self: end;
+    }
+
+    .mode-switch button {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: transparent;
+      border: none;
+      padding: 12px 18px;
+      cursor: pointer;
+      color: var(--ink);
+      position: relative;
+      transition: color 0.15s;
+    }
+
+    .mode-switch button + button {
+      border-left: var(--rule);
+    }
+
+    .mode-switch button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .mode-switch button:not([aria-pressed="true"]):hover {
+      color: var(--accent);
+    }
+
+    /* ──────────────── MAIN ──────────────── */
+    main {
+      padding: 40px 0 60px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: 56px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    .pane { display: none; }
+    .pane.active { display: contents; }
+
+    /* ──────────────── EDITOR (compose) ──────────────── */
+    .editor-wrap {
+      grid-column: 1;
+      position: relative;
+    }
+
+    .label {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .label::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      background: var(--ink);
+    }
+
+    .label.accent::before { background: var(--accent); }
+
+    .editor-frame {
+      border: var(--thick);
+      background: var(--paper);
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .editor-frame:focus-within {
+      border-color: var(--accent);
+    }
+
+    textarea#composer {
+      width: 100%;
+      min-height: 460px;
+      border: none;
+      background: transparent;
+      padding: 24px 28px;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--ink);
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea#composer::placeholder {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .editor-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px 8px 28px;
+      border-top: var(--rule);
+      background: var(--bone-2);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .editor-meta .count strong { color: var(--ink); }
+
+    /* ──────────────── SIDE PANEL (rules + action) ──────────────── */
+    .side {
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      position: sticky;
+      top: 32px;
+    }
+
+    @media (max-width: 900px) {
+      .side { position: static; grid-column: 1; }
+    }
+
+    .rule-block {
+      background: var(--paper);
+      border: var(--rule);
+      padding: 18px 20px;
+    }
+
+    .rule-block .heading {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .rule-block .value {
+      font-family: var(--serif);
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: -0.01em;
+    }
+
+    .rule-block.toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .rule-block.toggle:hover { background: var(--bone-2); }
+
+    .rule-block.toggle .check {
+      width: 28px;
+      height: 28px;
+      border: var(--rule);
+      background: var(--paper);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .rule-block.toggle.on .check {
+      background: var(--ink);
+    }
+
+    .rule-block.toggle.on .check::after {
+      content: '';
+      width: 14px;
+      height: 8px;
+      border-left: 3px solid var(--paper);
+      border-bottom: 3px solid var(--paper);
+      transform: rotate(-45deg) translate(2px, -1px);
+    }
+
+    .rule-block.toggle .copy { flex: 1; padding-right: 16px; }
+
+    .rule-block.toggle .copy .heading {
+      margin-bottom: 4px;
+    }
+
+    .rule-block.toggle .copy .text {
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.05;
+    }
+
+    .rule-block select {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      background: transparent;
+      border: none;
+      border-bottom: var(--hairline);
+      padding: 6px 0;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 4l3 3 3-3' stroke='%23181818' stroke-width='1.4' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0 center;
+    }
+
+    .rule-block select:focus { outline: none; border-bottom-color: var(--accent); }
+
+    /* ──────────────── ACTION BUTTON ──────────────── */
+    .action-btn {
+      display: block;
+      width: 100%;
+      font-family: var(--sans);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--paper);
+      background: var(--ink);
+      border: var(--thick);
+      border-color: var(--ink);
+      padding: 22px 24px;
+      cursor: pointer;
+      text-align: left;
+      position: relative;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .action-btn::after {
+      content: '→';
+      position: absolute;
+      right: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--serif);
+      font-size: 32px;
+      line-height: 1;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .action-btn:active:not(:disabled) {
+      transform: translate(1px, 1px);
+    }
+
+    .action-btn:disabled {
+      background: var(--muted);
+      border-color: var(--muted);
+      cursor: wait;
+    }
+
+    .action-btn .sub {
+      display: block;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      opacity: 0.7;
+      margin-top: 4px;
+    }
+
+    /* ──────────────── BRUTALIST PROGRESS BAR ──────────────── */
+    .progress {
+      margin-top: 18px;
+      display: none;
+    }
+
+    .progress.on { display: block; }
+
+    .progress .track {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .progress .seg {
+      flex: 1;
+      height: 14px;
+      background: var(--bone-2);
+      border: var(--hairline);
+      transition: background 0.2s;
+    }
+
+    .progress .seg.fill { background: var(--ink); }
+    .progress .seg.fill.accent { background: var(--accent); }
+
+    .progress .step {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .progress .step .now { color: var(--ink); font-weight: 700; }
+
+    /* ──────────────── DELIVERY (post-create) ──────────────── */
+    .delivery {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 56px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .delivery { grid-template-columns: 1fr; gap: 28px; }
+    }
+
+    .url-card {
+      border: var(--thick);
+      background: var(--paper);
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .url-card::before {
+      content: 'DELIVERY';
+      position: absolute;
+      top: 0;
+      left: 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 4px 12px;
+    }
+
+    .url-card .preface {
+      margin-top: 18px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .url-display {
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.45;
+      word-break: break-all;
+      padding: 16px 18px;
+      background: var(--bone);
+      border: var(--rule);
+      color: var(--ink);
+      user-select: all;
+    }
+
+    .url-display .frag {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .url-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ghost-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: transparent;
+      border: var(--rule);
+      color: var(--ink);
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .ghost-btn:hover { background: var(--ink); color: var(--paper); }
+    .ghost-btn.danger { color: var(--accent); border-color: var(--accent); }
+    .ghost-btn.danger:hover { background: var(--accent); color: var(--paper); }
+
+    .warning {
+      border-top: var(--rule);
+      padding-top: 24px;
+    }
+
+    .warning .heading {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .warning .body {
+      font-family: var(--serif);
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+    }
+
+    .warning .body em { font-style: italic; color: var(--accent); }
+
+    /* ──────────────── RECEIVE ──────────────── */
+    .receive-input {
+      grid-column: 1;
+    }
+
+    .receive-input input {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 18px;
+      color: var(--ink);
+      background: var(--paper);
+      border: var(--thick);
+      padding: 22px 26px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .receive-input input:focus { border-color: var(--accent); }
+    .receive-input input::placeholder { color: var(--muted); }
+
+    .decoded {
+      grid-column: 1 / -1;
+      border: var(--thick);
+      background: var(--paper);
+      padding: 32px;
+      position: relative;
+    }
+
+    .decoded::before {
+      content: 'DECODED';
+      position: absolute;
+      top: 0; left: 0;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 4px 12px;
+    }
+
+    .decoded .body {
+      margin-top: 18px;
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .decoded .meta {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: var(--hairline);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .decoded .meta .item strong { color: var(--ink); }
+
+    /* ──────────────── ERROR / EMPTY STATES ──────────────── */
+    .state-card {
+      grid-column: 1 / -1;
+      border: var(--thick);
+      background: var(--paper);
+      padding: 56px 48px;
+      text-align: center;
+    }
+
+    .state-card .glyph {
+      font-family: var(--serif);
+      font-size: 96px;
+      line-height: 1;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+
+    .state-card .head {
+      font-family: var(--serif);
+      font-size: 42px;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .state-card .sub {
+      font-family: var(--sans);
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ──────────────── FOOTER ──────────────── */
+    footer {
+      border-top: var(--rule);
+      padding: 14px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    footer .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    footer .pulse {
+      width: 8px; height: 8px;
+      background: var(--muted);
+    }
+
+    footer .pulse.on { background: var(--accent); animation: pulse 2s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    footer .right { display: flex; gap: 24px; }
+
+    /* ──────────────── UTILITIES ──────────────── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <header>
+      <h1 class="wordmark">cinder<span class="dot">.</span><span class="ital">notes that disappear</span></h1>
+      <div class="mode-switch" role="tablist">
+        <button id="tab-compose" aria-pressed="true">Compose</button>
+        <button id="tab-receive" aria-pressed="false">Receive</button>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ═══════════ COMPOSE PANE ═══════════ -->
+      <div id="pane-compose" class="pane active">
+        <section class="editor-wrap">
+          <div class="label">01 — Text · the part nobody but the recipient should ever see</div>
+          <div class="editor-frame">
+            <textarea id="composer" placeholder="type or paste. encryption happens here, in this browser, before anything leaves."></textarea>
+            <div class="editor-meta">
+              <span class="count"><strong id="char-count">0</strong> chars</span>
+              <span>encrypted client-side · server is blind</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="label accent">02 — Rules</div>
+
+          <div class="rule-block">
+            <div class="heading">Burns in</div>
+            <select id="ttl-select">
+              <option value="900">15 minutes</option>
+              <option value="3600">1 hour</option>
+              <option value="86400">24 hours</option>
+              <option value="604800">7 days</option>
+              <option value="2592000">30 days (max)</option>
+            </select>
+          </div>
+
+          <div class="rule-block toggle on" id="burn-toggle" role="checkbox" aria-checked="true" tabindex="0">
+            <div class="copy">
+              <div class="heading">On open</div>
+              <div class="text">Destroy after first read</div>
+            </div>
+            <div class="check"></div>
+          </div>
+
+          <button class="action-btn" id="drop-btn">
+            Drop it
+            <span class="sub">encrypt + transmit + bury</span>
+          </button>
+
+          <div class="progress" id="compose-progress">
+            <div class="track">
+              <div class="seg" data-seg="1"></div>
+              <div class="seg" data-seg="2"></div>
+              <div class="seg" data-seg="3"></div>
+              <div class="seg" data-seg="4"></div>
+            </div>
+            <div class="step"><span class="now">·</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ═══════════ DELIVERY PANE ═══════════ -->
+      <div id="pane-delivery" class="pane">
+        <div class="delivery">
+          <div class="url-card">
+            <div class="preface">your delivery URL — share it through a channel you trust.</div>
+            <div class="url-display" id="url-display">…</div>
+            <div class="url-actions">
+              <button class="ghost-btn" id="copy-url-btn">Copy URL</button>
+              <button class="ghost-btn" id="copy-id-btn">Copy ID only</button>
+              <button class="ghost-btn danger" id="new-btn">Compose another</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="warning">
+              <div class="heading">⚠ Read this</div>
+              <div class="body">
+                The part after the <em>#</em> is the key. It never reached cinder's server. We <em>cannot</em> recover this URL for you. If you lose it, the note is gone forever.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ RECEIVE PANE ═══════════ -->
+      <div id="pane-receive" class="pane">
+        <section class="receive-input">
+          <div class="label">01 — Paste a cinder URL or ID</div>
+          <input type="text" id="receive-input" placeholder="https://… or just the id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+          <div style="margin-top: 18px;">
+            <button class="action-btn" id="decode-btn" style="max-width: 280px;">
+              Decode
+              <span class="sub">fetch + decrypt locally</span>
+            </button>
+          </div>
+          <div class="progress" id="receive-progress">
+            <div class="track">
+              <div class="seg" data-seg="1"></div>
+              <div class="seg" data-seg="2"></div>
+              <div class="seg" data-seg="3"></div>
+            </div>
+            <div class="step"><span class="now">·</span></div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="label accent">How this works</div>
+          <div class="rule-block">
+            <div class="heading">1 / Fetch</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">Cinder hands back encrypted bytes.</div>
+          </div>
+          <div class="rule-block">
+            <div class="heading">2 / Decrypt</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">Your browser uses the key from the URL fragment.</div>
+          </div>
+          <div class="rule-block">
+            <div class="heading">3 / Maybe burn</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">If the sender said so, the note is gone after this read.</div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ═══════════ DECODED PANE ═══════════ -->
+      <div id="pane-decoded" class="pane">
+        <div class="decoded">
+          <pre class="body" id="decoded-body"></pre>
+          <div class="meta" id="decoded-meta"></div>
+          <div style="margin-top: 24px;">
+            <button class="ghost-btn" id="decoded-copy-btn">Copy contents</button>
+            <button class="ghost-btn danger" id="decoded-back-btn">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════ STATE CARDS ═══════════ -->
+      <div id="pane-state" class="pane">
+        <div class="state-card">
+          <div class="glyph" id="state-glyph">·</div>
+          <div class="head" id="state-head">…</div>
+          <div class="sub" id="state-sub">…</div>
+          <div style="margin-top: 28px;">
+            <button class="ghost-btn" id="state-back-btn">Back</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer>
+      <div class="live">
+        <span class="pulse" id="footer-pulse"></span>
+        <span id="footer-status">CHECKING SERVER</span>
+      </div>
+      <div class="right">
+        <span>AES-GCM 256 · CLIENT-SIDE</span>
+        <span>BUILD 0.1</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════
+    // CONFIG
+    // ════════════════════════════════════════════
+    const API_BASE = 'http://localhost:8080/api/v1/notes';
+
+    // ════════════════════════════════════════════
+    // BASE64 HELPERS
+    // ════════════════════════════════════════════
+    function bytesToB64(bytes) {
+      // turn each byte into a single-character string, then base64 the whole thing
+      let s = '';
+      for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s);
+    }
+
+    function b64ToBytes(b64) {
+      // base64 → binary string → Uint8Array
+      const s = atob(b64);
+      const bytes = new Uint8Array(s.length);
+      for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+      return bytes;
+    }
+
+    // URL-safe base64 (used for the key in the URL fragment)
+    function bytesToB64Url(bytes) {
+      // standard base64, then swap chars for URL-safety
+      return bytesToB64(bytes)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');           // strip trailing padding
+    }
+
+    function b64UrlToBytes(b64url) {
+      // undo URL-safe substitutions, restore padding, then decode normally
+      let b64 = b64url
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      return b64ToBytes(b64);
+    }
+
+    // ════════════════════════════════════════════
+    // CRYPTO (AES-GCM 256, browser-side, never leaves)
+    // ════════════════════════════════════════════
+    async function encrypt(plaintext) {
+      // 1. plaintext (string) → bytes
+      const data = new TextEncoder().encode(plaintext);
+
+      // 2. fresh AES-GCM 256 key
+      const key = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,                           // extractable so we can export raw bytes for the URL
+        ['encrypt', 'decrypt']
+      );
+
+      // 3. fresh 12-byte IV
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+
+      // 4. encrypt → ArrayBuffer
+      const ciphertextBuffer = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        data
+      );
+
+      // 5. export raw key bytes → ArrayBuffer
+      const rawKeyBuffer = await crypto.subtle.exportKey('raw', key);
+
+      // 6. wrap ArrayBuffers as Uint8Array, base64-encode for transport
+      return {
+        ciphertext: bytesToB64(new Uint8Array(ciphertextBuffer)),  // → JSON to backend
+        iv:         bytesToB64(iv),                                // → JSON to backend
+        keyFragment: bytesToB64Url(new Uint8Array(rawKeyBuffer)),  // → URL fragment, never to server
+      };
+    }
+
+    async function decrypt(ciphertextB64, ivB64, keyFragment) {
+      // 1. decode the three inputs back to bytes (mirror of encrypt step 6)
+      const ciphertextBytes = b64ToBytes(ciphertextB64);
+      const ivBytes         = b64ToBytes(ivB64);
+      const rawKey          = b64UrlToBytes(keyFragment);
+
+      // 2. import raw bytes back into a CryptoKey object
+      //    (Web Crypto needs a CryptoKey, not raw bytes, to do the decrypt)
+      const key = await crypto.subtle.importKey(
+        'raw',                          // format we're providing
+        rawKey,                         // the bytes
+        { name: 'AES-GCM', length: 256 }, // what algorithm this key is for
+        false,                          // extractable: no, we won't re-export it
+        ['decrypt']                     // only need to decrypt
+      );
+
+      // 3. decrypt → ArrayBuffer of plaintext bytes
+      //    if key/iv/ciphertext don't match, this THROWS (it doesn't return garbage)
+      const plaintextBuffer = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: ivBytes },
+        key,
+        ciphertextBytes
+      );
+
+      // 4. bytes → string
+      return new TextDecoder().decode(plaintextBuffer);
+    }
+
+    // ════════════════════════════════════════════
+    // PANE SWITCHING
+    // ════════════════════════════════════════════
+    const panes = ['compose', 'delivery', 'receive', 'decoded', 'state'];
+    function showPane(name) {
+      panes.forEach(p => document.getElementById(`pane-${p}`).classList.toggle('active', p === name));
+      const composeTab = document.getElementById('tab-compose');
+      const receiveTab = document.getElementById('tab-receive');
+      const isReceiveSide = name === 'receive' || name === 'decoded';
+      composeTab.setAttribute('aria-pressed', !isReceiveSide);
+      receiveTab.setAttribute('aria-pressed', isReceiveSide);
+    }
+
+    document.getElementById('tab-compose').addEventListener('click', () => showPane('compose'));
+    document.getElementById('tab-receive').addEventListener('click', () => showPane('receive'));
+
+    // ════════════════════════════════════════════
+    // PROGRESS BAR
+    // ════════════════════════════════════════════
+    function progress(id, segs, label, accent = false) {
+      const el = document.getElementById(id);
+      el.classList.add('on');
+      const all = el.querySelectorAll('.seg');
+      all.forEach((s, i) => {
+        s.classList.toggle('fill', i < segs);
+        s.classList.toggle('accent', i < segs && accent);
+      });
+      el.querySelector('.now').textContent = label;
+    }
+    function progressDone(id) {
+      const el = document.getElementById(id);
+      setTimeout(() => el.classList.remove('on'), 800);
+    }
+
+    // ════════════════════════════════════════════
+    // COMPOSE
+    // ════════════════════════════════════════════
+    const composer = document.getElementById('composer');
+    const charCount = document.getElementById('char-count');
+    composer.addEventListener('input', () => {
+      charCount.textContent = composer.value.length.toLocaleString();
+    });
+
+    const burnToggle = document.getElementById('burn-toggle');
+    function setBurn(state) {
+      burnToggle.classList.toggle('on', state);
+      burnToggle.setAttribute('aria-checked', state);
+    }
+    burnToggle.addEventListener('click', () => setBurn(!burnToggle.classList.contains('on')));
+    burnToggle.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        setBurn(!burnToggle.classList.contains('on'));
+      }
+    });
+
+    document.getElementById('drop-btn').addEventListener('click', dropIt);
+
+    async function dropIt() {
+      const text = composer.value;
+      if (!text.trim()) {
+        showState('!', 'Empty', 'Nothing to encrypt. Type something first.');
+        return;
+      }
+
+      const btn = document.getElementById('drop-btn');
+      btn.disabled = true;
+      btn.firstChild.textContent = 'Working… ';
+
+      try {
+        progress('compose-progress', 1, 'ENCRYPTING');
+        const { ciphertext, iv, keyFragment } = await encrypt(text);
+
+        progress('compose-progress', 2, 'TRANSMITTING');
+        const ttl = parseInt(document.getElementById('ttl-select').value, 10);
+        const burn = burnToggle.classList.contains('on');
+
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ciphertext, iv,
+            burnAfterReading: burn,
+            expiresInSeconds: ttl,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        progress('compose-progress', 3, 'BUILDING URL');
+        const { id } = await res.json();
+        const url = `${location.origin}${location.pathname}#${id}.${keyFragment}`;
+
+        progress('compose-progress', 4, 'BURIED ✓', true);
+        progressDone('compose-progress');
+
+        showDelivery(url, id, keyFragment);
+      } catch (e) {
+        showState('×', 'Failed', e.message);
+        progressDone('compose-progress');
+      } finally {
+        btn.disabled = false;
+        btn.firstChild.textContent = 'Drop it';
+      }
+    }
+
+    // ════════════════════════════════════════════
+    // DELIVERY VIEW
+    // ════════════════════════════════════════════
+    function showDelivery(url, id, key) {
+      const display = document.getElementById('url-display');
+      // highlight the fragment portion in red
+      const idx = url.indexOf('#');
+      display.innerHTML = `${escapeHtml(url.slice(0, idx + 1))}<span class="frag">${escapeHtml(url.slice(idx + 1))}</span>`;
+      document.getElementById('copy-url-btn').onclick = (e) => {
+        navigator.clipboard.writeText(url);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy URL', 1500);
+      };
+      document.getElementById('copy-id-btn').onclick = (e) => {
+        navigator.clipboard.writeText(id);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy ID only', 1500);
+      };
+      document.getElementById('new-btn').onclick = () => {
+        composer.value = '';
+        charCount.textContent = '0';
+        history.replaceState(null, '', location.pathname);
+        showPane('compose');
+      };
+      showPane('delivery');
+    }
+
+    // ════════════════════════════════════════════
+    // RECEIVE
+    // ════════════════════════════════════════════
+    const receiveInput = document.getElementById('receive-input');
+    document.getElementById('decode-btn').addEventListener('click', () => decodeFrom(receiveInput.value));
+    receiveInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') decodeFrom(receiveInput.value);
+    });
+
+    function parseInput(raw) {
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+
+      let fragment;
+      try {
+        const url = new URL(trimmed);
+        fragment = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+      } catch {
+        fragment = trimmed;
+      }
+
+      if (!fragment) return null;
+
+      const dotIdx = fragment.indexOf('.');
+      if (dotIdx === -1) return { id: fragment, key: undefined };
+
+      return {
+        id: fragment.slice(0, dotIdx),
+        key: fragment.slice(dotIdx + 1),
+      };
+    }
+
+    async function decodeFrom(raw) {
+      const parsed = parseInput(raw);
+      if (!parsed || !parsed.id) {
+        showState('?', 'Need an ID', 'Paste a cinder URL or an ID like aB3kZ9xQpL.');
+        return;
+      }
+      if (!parsed.key) {
+        showState('!', 'Key missing', 'The decryption key lives after the # in the URL. Without it, the note is unreadable.');
+        return;
+      }
+
+      const btn = document.getElementById('decode-btn');
+      btn.disabled = true;
+      btn.firstChild.textContent = 'Working… ';
+
+      try {
+        progress('receive-progress', 1, 'FETCHING');
+        const res = await fetch(`${API_BASE}/${encodeURIComponent(parsed.id)}`);
+        if (res.status === 404) {
+          showState('×', 'Gone', 'No note with that ID. It may have expired or already been read.');
+          progressDone('receive-progress');
+          return;
+        }
+        if (res.status === 410) {
+          showState('×', 'Burned', 'This note already self-destructed.');
+          progressDone('receive-progress');
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        progress('receive-progress', 2, 'DECRYPTING');
+        const plaintext = await decrypt(data.ciphertext, data.iv, parsed.key);
+
+        progress('receive-progress', 3, data.burnAfterReading ? 'BURNED ON READ' : 'OPEN', true);
+        progressDone('receive-progress');
+
+        showDecoded(plaintext, data);
+      } catch (e) {
+        showState('×', 'Decryption failed', `Wrong key, tampered ciphertext, or a bug. (${e.message})`);
+        progressDone('receive-progress');
+      } finally {
+        btn.disabled = false;
+        btn.firstChild.textContent = 'Decode';
+      }
+    }
+
+    function showDecoded(plaintext, data) {
+      document.getElementById('decoded-body').textContent = plaintext;
+      const created = new Date(data.createdAt).toLocaleString();
+      const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleString() : 'never';
+      document.getElementById('decoded-meta').innerHTML = `
+        <div class="item"><strong>${data.id}</strong></div>
+        <div class="item">created ${created}</div>
+        <div class="item">expires ${expires}</div>
+        <div class="item">${data.burnAfterReading ? 'burned on read' : 'persistent'}</div>
+      `;
+      document.getElementById('decoded-copy-btn').onclick = (e) => {
+        navigator.clipboard.writeText(plaintext);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy contents', 1500);
+      };
+      document.getElementById('decoded-back-btn').onclick = () => {
+        history.replaceState(null, '', location.pathname);
+        receiveInput.value = '';
+        showPane('receive');
+      };
+      showPane('decoded');
+    }
+
+    // ════════════════════════════════════════════
+    // STATE / ERROR DISPLAY
+    // ════════════════════════════════════════════
+    function showState(glyph, head, sub) {
+      document.getElementById('state-glyph').textContent = glyph;
+      document.getElementById('state-head').textContent = head;
+      document.getElementById('state-sub').textContent = sub;
+      document.getElementById('state-back-btn').onclick = () => {
+        const onReceiveSide = document.getElementById('tab-receive').getAttribute('aria-pressed') === 'true';
+        showPane(onReceiveSide ? 'receive' : 'compose');
+      };
+      showPane('state');
+    }
+
+    // ════════════════════════════════════════════
+    // BACKEND HEARTBEAT
+    // ════════════════════════════════════════════
+    async function checkBackend() {
+      const pulse = document.getElementById('footer-pulse');
+      const status = document.getElementById('footer-status');
+      try {
+        // any response — even 404 — proves server is up
+        await fetch(`${API_BASE}/__healthcheck__`);
+        pulse.classList.add('on');
+        status.textContent = 'CINDER ONLINE';
+      } catch {
+        pulse.classList.remove('on');
+        status.textContent = 'CINDER OFFLINE';
+      }
+    }
+    checkBackend();
+    setInterval(checkBackend, 30_000);
+
+    // ════════════════════════════════════════════
+    // AUTO-DECODE FROM URL FRAGMENT
+    // ════════════════════════════════════════════
+    if (location.hash && location.hash.length > 1) {
+      // looks like /cinder.html#abc123.xK9... — auto-receive
+      receiveInput.value = location.href;
+      showPane('receive');
+      // small delay so users see the fetch happen, not just instant content
+      setTimeout(() => decodeFrom(location.href), 300);
+    }
+
+    // ════════════════════════════════════════════
+    // UTIL
+    // ════════════════════════════════════════════
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>
