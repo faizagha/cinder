@@ -1,0 +1,1450 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CINDER</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --surface-0: #dce5e1;
+      --surface-1: #eff5f2;
+      --surface-2: #c8d4ce;
+      --surface-3: #aebdb6;
+      --surface-hot: #f7fbf9;
+
+      --ink: #111817;
+      --ink-soft: #2d3936;
+      --muted: #5f6f69;
+      --muted-2: #7d8d87;
+
+      --accent: #255f55;
+      --accent-dark: #153d36;
+      --accent-soft: #d3ebe4;
+
+      --danger: #8c2f24;
+      --danger-soft: #ead0ca;
+
+      --line: #9aaba5;
+      --line-soft: rgba(17, 24, 23, 0.16);
+      --line-strong: #111817;
+
+      --shadow-hard: 8px 8px 0 #111817;
+      --shadow-button: 5px 5px 0 #255f55;
+      --shadow-soft: 0 14px 34px rgba(17, 24, 23, 0.12);
+
+      --radius-xs: 3px;
+      --radius-sm: 5px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+
+      --serif: 'Instrument Serif', Georgia, serif;
+      --sans: 'Space Grotesk', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      min-height: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100%;
+      font-family: var(--sans);
+      background:
+        linear-gradient(90deg, rgba(17, 24, 23, 0.035) 1px, transparent 1px),
+        linear-gradient(rgba(17, 24, 23, 0.035) 1px, transparent 1px),
+        var(--surface-0);
+      background-size: 28px 28px;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(37, 95, 85, 0.12), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(140, 47, 36, 0.08), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.32), transparent 42%);
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 34px 0 0;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 28px;
+      padding: 24px 0 28px;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .wordmark {
+      font-family: var(--serif);
+      font-size: clamp(72px, 13vw, 156px);
+      line-height: 0.78;
+      letter-spacing: -0.055em;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .wordmark .dot {
+      color: var(--accent);
+    }
+
+    .tagline {
+      display: block;
+      margin-top: 14px;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      padding: 4px;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      background: var(--surface-1);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .mode-switch button {
+      min-width: 104px;
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+    }
+
+    .mode-switch button[aria-pressed="true"] {
+      color: var(--surface-1);
+      background: var(--ink);
+    }
+
+    .mode-switch button:not([aria-pressed="true"]):hover {
+      color: var(--ink);
+      background: var(--accent-soft);
+    }
+
+    .mode-switch button:active {
+      transform: scale(0.97);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+      gap: 28px;
+      align-items: start;
+      padding: 38px 0 56px;
+    }
+
+    .pane { display: none; }
+    .pane.active { display: contents; animation: rise 0.18s ease both; }
+
+    .editor-wrap {
+      grid-column: 1;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .label::before {
+      content: '';
+      width: 22px;
+      height: 8px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--ink) 0 4px,
+        transparent 4px 7px
+      );
+    }
+
+    .label.accent::before {
+      background: var(--accent);
+    }
+
+    .editor-frame {
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-md);
+      background: var(--surface-1);
+      box-shadow: var(--shadow-hard);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .editor-frame::before {
+      content: "LOCAL BUFFER / SERVER BLIND";
+      display: block;
+      padding: 7px 12px;
+      background: var(--ink);
+      color: var(--surface-1);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .editor-frame:focus-within {
+      border-color: var(--accent);
+      box-shadow: 8px 8px 0 var(--accent-dark);
+      transform: translate(-1px, -1px);
+    }
+
+    textarea#composer {
+      width: 100%;
+      min-height: 460px;
+      border: none;
+      background: transparent;
+      padding: 26px 28px;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--ink);
+      caret-color: var(--accent);
+      resize: vertical;
+      outline: none;
+    }
+
+    textarea#composer::placeholder {
+      color: var(--muted-2);
+      font-style: italic;
+    }
+
+    textarea#composer::selection,
+    .decoded .body::selection,
+    .url-display::selection {
+      background: var(--accent-soft);
+      color: var(--ink);
+    }
+
+    .editor-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 11px 14px 11px 28px;
+      border-top: 1px solid var(--line);
+      background: var(--surface-2);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .editor-meta .count strong {
+      color: var(--accent);
+    }
+
+    .side {
+      grid-column: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 28px;
+    }
+
+    /* Side panel cards stay LIGHT — no shadow.
+       Heavy shadow is reserved for the anchor surfaces (editor, url-card, decoded, state, action button). */
+    .rule-block {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface-1);
+      padding: 18px;
+      transition: background-color 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .rule-block:hover {
+      border-color: var(--line-strong);
+      background: var(--surface-hot);
+      transform: translateY(-1px);
+    }
+
+    .rule-block .heading {
+      margin-bottom: 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .rule-block .value {
+      font-family: var(--serif);
+      font-size: 32px;
+      line-height: 1;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .rule-block.toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .rule-block.toggle .copy {
+      flex: 1;
+      padding-right: 16px;
+    }
+
+    .rule-block.toggle .copy .heading {
+      margin-bottom: 5px;
+    }
+
+    .rule-block.toggle .copy .text {
+      font-family: var(--serif);
+      font-size: 25px;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .rule-block.toggle .check {
+      width: 46px;
+      height: 28px;
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-xs);
+      background: var(--surface-2);
+      position: relative;
+      flex-shrink: 0;
+      transition: background-color 0.18s ease;
+    }
+
+    .rule-block.toggle .check::before {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 18px;
+      height: 18px;
+      background: var(--ink);
+      transition: transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    .rule-block.toggle.on .check {
+      background: var(--accent-soft);
+    }
+
+    .rule-block.toggle.on .check::before {
+      transform: translateX(18px);
+      background: var(--accent);
+    }
+
+    .rule-block select {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      background-color: transparent;
+      border: none;
+      border-bottom: 1px solid var(--line);
+      padding: 8px 28px 7px 0;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' stroke='%23111817' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 4px center;
+    }
+
+    .rule-block select:focus {
+      border-bottom-color: var(--accent);
+    }
+
+    .action-btn {
+      position: relative;
+      display: block;
+      width: 100%;
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--ink);
+      color: var(--surface-1);
+      box-shadow: var(--shadow-button);
+      padding: 20px 54px 19px 22px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.18s ease;
+    }
+
+    .action-btn::after {
+      content: '→';
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-52%);
+      font-family: var(--serif);
+      font-size: 32px;
+      line-height: 1;
+      color: var(--surface-1);
+      transition: transform 0.18s ease;
+    }
+
+    .action-btn:hover:not(:disabled) {
+      transform: translate(-1px, -1px);
+      box-shadow: 7px 7px 0 var(--accent);
+    }
+
+    .action-btn:hover:not(:disabled)::after {
+      transform: translate(3px, -52%);
+    }
+
+    .action-btn:active:not(:disabled) {
+      transform: translate(3px, 3px);
+      box-shadow: 2px 2px 0 var(--accent);
+    }
+
+    .action-btn:disabled {
+      background: var(--surface-3);
+      color: var(--ink-soft);
+      border-color: var(--surface-3);
+      cursor: wait;
+      box-shadow: 5px 5px 0 var(--muted);
+    }
+
+    .action-btn .sub {
+      display: block;
+      margin-top: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      color: var(--surface-3);
+    }
+
+    .action-btn:disabled .sub {
+      color: var(--muted);
+    }
+
+    .progress {
+      display: none;
+      padding-top: 4px;
+    }
+
+    .progress.on {
+      display: block;
+    }
+
+    .progress .track {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 8px;
+    }
+
+    .progress .seg {
+      flex: 1;
+      height: 12px;
+      border: 1px solid var(--ink);
+      background: var(--surface-2);
+      transition: background-color 0.18s ease;
+    }
+
+    .progress .seg.fill {
+      background: var(--ink);
+    }
+
+    .progress .seg.fill.accent {
+      background: var(--accent);
+    }
+
+    .progress .step {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .progress .step .now {
+      color: var(--ink);
+    }
+
+    .delivery {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.65fr) minmax(280px, 0.85fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .url-card,
+    .decoded,
+    .state-card {
+      position: relative;
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-md);
+      background: var(--surface-1);
+      box-shadow: var(--shadow-hard);
+      overflow: hidden;
+    }
+
+    .url-card {
+      padding: 32px;
+    }
+
+    .url-card::before,
+    .decoded::before {
+      display: inline-flex;
+      width: fit-content;
+      margin-bottom: 18px;
+      padding: 7px 11px;
+      background: var(--ink);
+      color: var(--surface-1);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .url-card::before {
+      content: 'DELIVERY READY';
+    }
+
+    .url-card::after,
+    .decoded::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--ink) 0 18px,
+        transparent 18px 26px
+      );
+      opacity: 0.95;
+    }
+
+    .url-card .preface {
+      margin-bottom: 18px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 25px;
+      line-height: 1.12;
+      letter-spacing: -0.01em;
+      color: var(--ink-soft);
+    }
+
+    .url-display {
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.55;
+      word-break: break-all;
+      padding: 16px;
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface-hot);
+      color: var(--ink);
+      user-select: all;
+    }
+
+    .url-display .frag {
+      color: var(--danger);
+      font-weight: 700;
+      background: var(--danger-soft);
+      padding: 1px 3px;
+    }
+
+    .url-actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .ghost-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      background: var(--surface-1);
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .ghost-btn:hover {
+      background: var(--ink);
+      color: var(--surface-1);
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 var(--accent);
+    }
+
+    .ghost-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: none;
+    }
+
+    .ghost-btn.danger {
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .ghost-btn.danger:hover {
+      background: var(--danger);
+      color: var(--surface-1);
+      box-shadow: 3px 3px 0 var(--ink);
+    }
+
+    .warning {
+      padding: 26px 2px 0;
+      border-top: 1px solid var(--ink);
+    }
+
+    .warning .heading {
+      margin-bottom: 10px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--danger);
+    }
+
+    .warning .body {
+      font-family: var(--serif);
+      font-size: 26px;
+      line-height: 1.13;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+
+    .warning .body em {
+      color: var(--danger);
+      font-style: italic;
+    }
+
+    .receive-input {
+      grid-column: 1;
+    }
+
+    .receive-input input {
+      width: 100%;
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--ink);
+      background: var(--surface-1);
+      border: 1px solid var(--ink);
+      border-radius: var(--radius-md);
+      padding: 22px 24px;
+      outline: none;
+      box-shadow: var(--shadow-hard);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .receive-input input:focus {
+      border-color: var(--accent);
+      box-shadow: 8px 8px 0 var(--accent-dark);
+      transform: translate(-1px, -1px);
+    }
+
+    .receive-input input::placeholder {
+      color: var(--muted-2);
+    }
+
+    .decoded {
+      grid-column: 1 / -1;
+      padding: 32px 32px 42px;
+    }
+
+    .decoded::before {
+      content: 'DECODED LOCALLY';
+    }
+
+    .decoded .body {
+      margin-top: 0;
+      font-family: var(--mono);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--ink);
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .decoded .meta {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .decoded .meta .item {
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      background: var(--surface-hot);
+    }
+
+    .decoded .meta .item strong {
+      color: var(--accent);
+    }
+
+    .state-card {
+      grid-column: 1 / -1;
+      padding: 58px 44px;
+      text-align: center;
+    }
+
+    .state-card .glyph {
+      font-family: var(--serif);
+      font-size: 92px;
+      line-height: 0.9;
+      color: var(--danger);
+      margin-bottom: 14px;
+    }
+
+    .state-card .head {
+      font-family: var(--serif);
+      font-size: clamp(42px, 7vw, 72px);
+      line-height: 0.95;
+      letter-spacing: -0.035em;
+      color: var(--ink);
+      margin-bottom: 12px;
+    }
+
+    .state-card .sub {
+      font-size: 15px;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    footer {
+      border-top: 1px solid var(--ink);
+      padding: 16px 0 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    footer .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    footer .pulse {
+      width: 9px;
+      height: 9px;
+      background: var(--muted);
+    }
+
+    footer .pulse.on {
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    footer .right {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hidden { display: none !important; }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    [tabindex]:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(37, 95, 85, 0.22);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.42; transform: scale(0.82); }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media screen and (max-width: 900px) {
+      .page {
+        width: min(100vw - 28px, 720px);
+        padding-top: 18px;
+      }
+
+      header,
+      main,
+      .delivery {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: start;
+      }
+
+      .mode-switch {
+        justify-self: start;
+      }
+
+      .side {
+        position: static;
+        grid-column: 1;
+      }
+
+      textarea#composer {
+        min-height: 380px;
+      }
+    }
+
+    @media screen and (max-width: 560px) {
+      .wordmark {
+        font-size: 72px;
+      }
+
+      .tagline {
+        font-size: 11px;
+        margin-top: 10px;
+      }
+
+      .mode-switch,
+      .mode-switch button {
+        width: 100%;
+      }
+
+      .editor-meta {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .url-card,
+      .decoded,
+      .state-card {
+        padding: 26px 22px 36px;
+      }
+
+      .warning .body {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <header>
+      <div>
+        <h1 class="wordmark">cinder<span class="dot">.</span></h1>
+        <span class="tagline">notes that disappear</span>
+      </div>
+      <div class="mode-switch" role="tablist">
+        <button id="tab-compose" aria-pressed="true">Compose</button>
+        <button id="tab-receive" aria-pressed="false">Receive</button>
+      </div>
+    </header>
+
+    <main>
+
+      <div id="pane-compose" class="pane active">
+        <section class="editor-wrap">
+          <div class="label">01 / TEXT — never leaves your browser unencrypted</div>
+          <div class="editor-frame">
+            <textarea id="composer" placeholder="type or paste. encryption happens here, in this browser, before anything leaves."></textarea>
+            <div class="editor-meta">
+              <span class="count"><strong id="char-count">0</strong> chars</span>
+              <span>encrypted client-side · server is blind</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="label accent">02 / RULES</div>
+
+          <div class="rule-block">
+            <div class="heading">Burns in</div>
+            <select id="ttl-select">
+              <option value="900">15 minutes</option>
+              <option value="3600">1 hour</option>
+              <option value="86400">24 hours</option>
+              <option value="604800">7 days</option>
+              <option value="2592000">30 days (max)</option>
+            </select>
+          </div>
+
+          <div class="rule-block toggle on" id="burn-toggle" role="checkbox" aria-checked="true" tabindex="0">
+            <div class="copy">
+              <div class="heading">On open</div>
+              <div class="text">Destroy after first read</div>
+            </div>
+            <div class="check"></div>
+          </div>
+
+          <button class="action-btn" id="drop-btn">
+            Drop it
+            <span class="sub">encrypt + transmit + bury</span>
+          </button>
+
+          <div class="progress" id="compose-progress">
+            <div class="track">
+              <div class="seg" data-seg="1"></div>
+              <div class="seg" data-seg="2"></div>
+              <div class="seg" data-seg="3"></div>
+              <div class="seg" data-seg="4"></div>
+            </div>
+            <div class="step"><span class="now">·</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <div id="pane-delivery" class="pane">
+        <div class="delivery">
+          <div class="url-card">
+            <div class="preface">your delivery URL — share it through a channel you trust.</div>
+            <div class="url-display" id="url-display">…</div>
+            <div class="url-actions">
+              <button class="ghost-btn" id="copy-url-btn">Copy URL</button>
+              <button class="ghost-btn" id="copy-id-btn">Copy ID only</button>
+              <button class="ghost-btn danger" id="new-btn">Compose another</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="warning">
+              <div class="heading">⚠ Read this</div>
+              <div class="body">
+                The part after the <em>#</em> is the key. It never reached cinder's server. We <em>cannot</em> recover this URL for you. If you lose it, the note is gone forever.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pane-receive" class="pane">
+        <section class="receive-input">
+          <div class="label">01 / PASTE A CINDER URL OR ID</div>
+          <input type="text" id="receive-input" placeholder="https://… or just the id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
+          <div style="margin-top: 18px;">
+            <button class="action-btn" id="decode-btn" style="max-width: 280px;">
+              Decode
+              <span class="sub">fetch + decrypt locally</span>
+            </button>
+          </div>
+          <div class="progress" id="receive-progress">
+            <div class="track">
+              <div class="seg" data-seg="1"></div>
+              <div class="seg" data-seg="2"></div>
+              <div class="seg" data-seg="3"></div>
+            </div>
+            <div class="step"><span class="now">·</span></div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="label accent">HOW THIS WORKS</div>
+          <div class="rule-block">
+            <div class="heading">1 / Fetch</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">Cinder hands back encrypted bytes.</div>
+          </div>
+          <div class="rule-block">
+            <div class="heading">2 / Decrypt</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">Your browser uses the key from the URL fragment.</div>
+          </div>
+          <div class="rule-block">
+            <div class="heading">3 / Maybe burn</div>
+            <div style="font-family: var(--serif); font-size: 18px; line-height: 1.3; margin-top: 4px;">If the sender said so, the note is gone after this read.</div>
+          </div>
+        </aside>
+      </div>
+
+      <div id="pane-decoded" class="pane">
+        <div class="decoded">
+          <pre class="body" id="decoded-body"></pre>
+          <div class="meta" id="decoded-meta"></div>
+          <div style="margin-top: 24px;">
+            <button class="ghost-btn" id="decoded-copy-btn">Copy contents</button>
+            <button class="ghost-btn danger" id="decoded-back-btn">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="pane-state" class="pane">
+        <div class="state-card">
+          <div class="glyph" id="state-glyph">·</div>
+          <div class="head" id="state-head">…</div>
+          <div class="sub" id="state-sub">…</div>
+          <div style="margin-top: 28px;">
+            <button class="ghost-btn" id="state-back-btn">Back</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer>
+      <div class="live">
+        <span class="pulse" id="footer-pulse"></span>
+        <span id="footer-status">CHECKING SERVER</span>
+      </div>
+      <div class="right">
+        <span>AES-GCM 256 · CLIENT-SIDE</span>
+        <span>BUILD 1.5</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════
+    // CONFIG
+    // ════════════════════════════════════════════
+    const API_BASE = 'http://localhost:8080/api/v1/notes';
+
+    // ════════════════════════════════════════════
+    // BASE64 HELPERS
+    // ════════════════════════════════════════════
+    function bytesToB64(bytes) {
+      let s = '';
+      for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s);
+    }
+
+    function b64ToBytes(b64) {
+      const s = atob(b64);
+      const bytes = new Uint8Array(s.length);
+      for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+      return bytes;
+    }
+
+    function bytesToB64Url(bytes) {
+      return bytesToB64(bytes)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    function b64UrlToBytes(b64url) {
+      let b64 = b64url
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      return b64ToBytes(b64);
+    }
+
+    // ════════════════════════════════════════════
+    // CRYPTO (AES-GCM 256, browser-side, never leaves)
+    // ════════════════════════════════════════════
+    async function encrypt(plaintext) {
+      const data = new TextEncoder().encode(plaintext);
+
+      const key = await crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+
+      const ciphertextBuffer = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        data
+      );
+
+      const rawKeyBuffer = await crypto.subtle.exportKey('raw', key);
+
+      return {
+        ciphertext: bytesToB64(new Uint8Array(ciphertextBuffer)),
+        iv: bytesToB64(iv),
+        keyFragment: bytesToB64Url(new Uint8Array(rawKeyBuffer)),
+      };
+    }
+
+    async function decrypt(ciphertextB64, ivB64, keyFragment) {
+      const ciphertextBytes = b64ToBytes(ciphertextB64);
+      const ivBytes = b64ToBytes(ivB64);
+      const rawKey = b64UrlToBytes(keyFragment);
+
+      const key = await crypto.subtle.importKey(
+        'raw',
+        rawKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+
+      const plaintextBuffer = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: ivBytes },
+        key,
+        ciphertextBytes
+      );
+
+      return new TextDecoder().decode(plaintextBuffer);
+    }
+
+    // ════════════════════════════════════════════
+    // PANE SWITCHING
+    // ════════════════════════════════════════════
+    const panes = ['compose', 'delivery', 'receive', 'decoded', 'state'];
+    function showPane(name) {
+      panes.forEach(p => document.getElementById(`pane-${p}`).classList.toggle('active', p === name));
+      const composeTab = document.getElementById('tab-compose');
+      const receiveTab = document.getElementById('tab-receive');
+      const isReceiveSide = name === 'receive' || name === 'decoded';
+      composeTab.setAttribute('aria-pressed', !isReceiveSide);
+      receiveTab.setAttribute('aria-pressed', isReceiveSide);
+    }
+
+    document.getElementById('tab-compose').addEventListener('click', () => showPane('compose'));
+    document.getElementById('tab-receive').addEventListener('click', () => showPane('receive'));
+
+    // ════════════════════════════════════════════
+    // PROGRESS BAR
+    // ════════════════════════════════════════════
+    function progress(id, segs, label, accent = false) {
+      const el = document.getElementById(id);
+      el.classList.add('on');
+      const all = el.querySelectorAll('.seg');
+      all.forEach((s, i) => {
+        s.classList.toggle('fill', i < segs);
+        s.classList.toggle('accent', i < segs && accent);
+      });
+      el.querySelector('.now').textContent = label;
+    }
+    function progressDone(id) {
+      const el = document.getElementById(id);
+      setTimeout(() => el.classList.remove('on'), 800);
+    }
+
+    // ════════════════════════════════════════════
+    // COMPOSE
+    // ════════════════════════════════════════════
+    const composer = document.getElementById('composer');
+    const charCount = document.getElementById('char-count');
+    composer.addEventListener('input', () => {
+      charCount.textContent = composer.value.length.toLocaleString();
+    });
+
+    const burnToggle = document.getElementById('burn-toggle');
+    function setBurn(state) {
+      burnToggle.classList.toggle('on', state);
+      burnToggle.setAttribute('aria-checked', state);
+    }
+    burnToggle.addEventListener('click', () => setBurn(!burnToggle.classList.contains('on')));
+    burnToggle.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        setBurn(!burnToggle.classList.contains('on'));
+      }
+    });
+
+    document.getElementById('drop-btn').addEventListener('click', dropIt);
+
+    async function dropIt() {
+      const text = composer.value;
+      if (!text.trim()) {
+        showState('!', 'Empty', 'Nothing to encrypt. Type something first.');
+        return;
+      }
+
+      const btn = document.getElementById('drop-btn');
+      btn.disabled = true;
+      btn.firstChild.textContent = 'Working… ';
+
+      try {
+        progress('compose-progress', 1, 'ENCRYPTING');
+        const { ciphertext, iv, keyFragment } = await encrypt(text);
+
+        progress('compose-progress', 2, 'TRANSMITTING');
+        const ttl = parseInt(document.getElementById('ttl-select').value, 10);
+        const burn = burnToggle.classList.contains('on');
+
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ciphertext, iv,
+            burnAfterReading: burn,
+            expiresInSeconds: ttl,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        progress('compose-progress', 3, 'BUILDING URL');
+        const { id } = await res.json();
+        const url = `${location.origin}${location.pathname}#${id}.${keyFragment}`;
+
+        progress('compose-progress', 4, 'BURIED ✓', true);
+        progressDone('compose-progress');
+
+        showDelivery(url, id, keyFragment);
+      } catch (e) {
+        showState('×', 'Failed', e.message);
+        progressDone('compose-progress');
+      } finally {
+        btn.disabled = false;
+        btn.firstChild.textContent = 'Drop it';
+      }
+    }
+
+    // ════════════════════════════════════════════
+    // DELIVERY VIEW
+    // ════════════════════════════════════════════
+    function showDelivery(url, id, key) {
+      const display = document.getElementById('url-display');
+      const idx = url.indexOf('#');
+      display.innerHTML = `${escapeHtml(url.slice(0, idx + 1))}<span class="frag">${escapeHtml(url.slice(idx + 1))}</span>`;
+      document.getElementById('copy-url-btn').onclick = (e) => {
+        navigator.clipboard.writeText(url);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy URL', 1500);
+      };
+      document.getElementById('copy-id-btn').onclick = (e) => {
+        navigator.clipboard.writeText(id);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy ID only', 1500);
+      };
+      document.getElementById('new-btn').onclick = () => {
+        composer.value = '';
+        charCount.textContent = '0';
+        history.replaceState(null, '', location.pathname);
+        showPane('compose');
+      };
+      showPane('delivery');
+    }
+
+    // ════════════════════════════════════════════
+    // RECEIVE
+    // ════════════════════════════════════════════
+    const receiveInput = document.getElementById('receive-input');
+    document.getElementById('decode-btn').addEventListener('click', () => decodeFrom(receiveInput.value));
+    receiveInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') decodeFrom(receiveInput.value);
+    });
+
+    function parseInput(raw) {
+      const trimmed = raw.trim();
+      if (!trimmed) return null;
+
+      let fragment;
+      try {
+        const url = new URL(trimmed);
+        fragment = url.hash.startsWith('#') ? url.hash.slice(1) : url.hash;
+      } catch {
+        fragment = trimmed;
+      }
+
+      if (!fragment) return null;
+
+      const dotIdx = fragment.indexOf('.');
+      if (dotIdx === -1) return { id: fragment, key: undefined };
+
+      return {
+        id: fragment.slice(0, dotIdx),
+        key: fragment.slice(dotIdx + 1),
+      };
+    }
+
+    async function decodeFrom(raw) {
+      const parsed = parseInput(raw);
+      if (!parsed || !parsed.id) {
+        showState('?', 'Need an ID', 'Paste a cinder URL or an ID like aB3kZ9xQpL.');
+        return;
+      }
+      if (!parsed.key) {
+        showState('!', 'Key missing', 'The decryption key lives after the # in the URL. Without it, the note is unreadable.');
+        return;
+      }
+
+      const btn = document.getElementById('decode-btn');
+      btn.disabled = true;
+      btn.firstChild.textContent = 'Working… ';
+
+      try {
+        progress('receive-progress', 1, 'FETCHING');
+        const res = await fetch(`${API_BASE}/${encodeURIComponent(parsed.id)}`);
+        if (res.status === 404) {
+          showState('×', 'Gone', 'No note with that ID. It may have expired or already been read.');
+          progressDone('receive-progress');
+          return;
+        }
+        if (res.status === 410) {
+          showState('×', 'Burned', 'This note already self-destructed.');
+          progressDone('receive-progress');
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        progress('receive-progress', 2, 'DECRYPTING');
+        const plaintext = await decrypt(data.ciphertext, data.iv, parsed.key);
+
+        progress('receive-progress', 3, data.burnAfterReading ? 'BURNED ON READ' : 'OPEN', true);
+        progressDone('receive-progress');
+
+        showDecoded(plaintext, data);
+      } catch (e) {
+        showState('×', 'Decryption failed', `Wrong key, tampered ciphertext, or a bug. (${e.message})`);
+        progressDone('receive-progress');
+      } finally {
+        btn.disabled = false;
+        btn.firstChild.textContent = 'Decode';
+      }
+    }
+
+    function showDecoded(plaintext, data) {
+      document.getElementById('decoded-body').textContent = plaintext;
+      const created = new Date(data.createdAt).toLocaleString();
+      const expires = data.expiresAt ? new Date(data.expiresAt).toLocaleString() : 'never';
+      document.getElementById('decoded-meta').innerHTML = `
+        <div class="item"><strong>${data.id}</strong></div>
+        <div class="item">created ${created}</div>
+        <div class="item">expires ${expires}</div>
+        <div class="item">${data.burnAfterReading ? 'burned on read' : 'persistent'}</div>
+      `;
+      document.getElementById('decoded-copy-btn').onclick = (e) => {
+        navigator.clipboard.writeText(plaintext);
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = 'Copy contents', 1500);
+      };
+      document.getElementById('decoded-back-btn').onclick = () => {
+        history.replaceState(null, '', location.pathname);
+        receiveInput.value = '';
+        showPane('receive');
+      };
+      showPane('decoded');
+    }
+
+    // ════════════════════════════════════════════
+    // STATE / ERROR DISPLAY
+    // ════════════════════════════════════════════
+    function showState(glyph, head, sub) {
+      document.getElementById('state-glyph').textContent = glyph;
+      document.getElementById('state-head').textContent = head;
+      document.getElementById('state-sub').textContent = sub;
+      document.getElementById('state-back-btn').onclick = () => {
+        const onReceiveSide = document.getElementById('tab-receive').getAttribute('aria-pressed') === 'true';
+        showPane(onReceiveSide ? 'receive' : 'compose');
+      };
+      showPane('state');
+    }
+
+    // ════════════════════════════════════════════
+    // BACKEND HEARTBEAT
+    // ════════════════════════════════════════════
+    async function checkBackend() {
+      const pulse = document.getElementById('footer-pulse');
+      const status = document.getElementById('footer-status');
+      try {
+        await fetch(`${API_BASE}/__healthcheck__`);
+        pulse.classList.add('on');
+        status.textContent = 'CINDER ONLINE';
+      } catch {
+        pulse.classList.remove('on');
+        status.textContent = 'CINDER OFFLINE';
+      }
+    }
+    checkBackend();
+    setInterval(checkBackend, 30_000);
+
+    // ════════════════════════════════════════════
+    // AUTO-DECODE FROM URL FRAGMENT
+    // ════════════════════════════════════════════
+    if (location.hash && location.hash.length > 1) {
+      receiveInput.value = location.href;
+      showPane('receive');
+      setTimeout(() => decodeFrom(location.href), 300);
+    }
+
+    // ════════════════════════════════════════════
+    // UTIL
+    // ════════════════════════════════════════════
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>
