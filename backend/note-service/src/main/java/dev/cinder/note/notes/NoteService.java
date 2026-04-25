@@ -3,7 +3,6 @@ package dev.cinder.note.notes;
 import java.security.SecureRandom;
 import java.time.Instant;
 
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.aventrix.jnanoid.jnanoid.NanoIdUtils;
