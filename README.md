@@ -1,4 +1,3 @@
-
 # Cinder
 
 > End-to-end encrypted ephemeral notes. The server cannot read your content — even if it wanted to.
@@ -94,28 +93,35 @@ cinder/
 ## Running it locally
 
 ### Prerequisites
+
 - Java 21+ (Temurin recommended)
 - Python 3 (for serving the frontend statically — anything that serves files works)
 
 ### Backend
+
 ```bash
 ./gradlew :backend:note-service:bootRun
 ```
+
 Service starts on `http://localhost:8080`.
 
 H2 console available at `http://localhost:8080/h2-console`:
+
 - JDBC URL: `jdbc:h2:mem:cinderdb`
 - User: `sa`
-- Password: *(empty)*
+- Password: _(empty)_
 
 ### Frontend
+
 ```bash
 cd frontend
 python3 -m http.server 8000
 ```
+
 Open `http://localhost:8000/index.html`.
 
 ### Smoke test
+
 1. Type a note in the editor
 2. Click **Drop it**
 3. Copy the URL
@@ -127,6 +133,7 @@ Open `http://localhost:8000/index.html`.
 ## API
 
 ### `POST /api/v1/notes`
+
 Stores a new encrypted note. Server is blind to plaintext.
 
 ```json
@@ -140,11 +147,13 @@ Stores a new encrypted note. Server is blind to plaintext.
 ```
 
 Returns `201 Created`:
+
 ```json
 { "id": "aB3kZ9xQpL" }
 ```
 
 ### `GET /api/v1/notes/{id}`
+
 Returns the encrypted note. Decryption is client-side. If `burnAfterReading=true`, the row is hard-deleted on first successful GET.
 
 ```json
@@ -160,6 +169,7 @@ Returns the encrypted note. Decryption is client-side. If `burnAfterReading=true
 ```
 
 Errors are returned as a consistent JSON shape (handled by `GlobalExceptionHandler`):
+
 ```json
 {
   "timestamp": "2026-04-22T12:00:00Z",
@@ -177,6 +187,7 @@ Errors are returned as a consistent JSON shape (handled by `GlobalExceptionHandl
 See [`THREAT_MODEL.md`](./THREAT_MODEL.md) for the full breakdown. TL;DR:
 
 **Cinder protects against:**
+
 - Server compromise — only ciphertext is exposed
 - Operator subpoena — there is no plaintext to hand over
 - Database leaks — useless without per-note keys
@@ -184,6 +195,7 @@ See [`THREAT_MODEL.md`](./THREAT_MODEL.md) for the full breakdown. TL;DR:
 - Operator misconduct — operator cannot decrypt content
 
 **Cinder does NOT protect against:**
+
 - A user sharing the URL with the wrong person
 - Compromised endpoints (malware on the recipient's device)
 - Coercion of the operator (forced code changes — endpoint trust problem)
@@ -192,11 +204,14 @@ See [`THREAT_MODEL.md`](./THREAT_MODEL.md) for the full breakdown. TL;DR:
 
 For state-level threats, use [SecureDrop](https://securedrop.org/), [Signal](https://signal.org/), or air-gapped systems. **Cinder is the right tool for "I want to share a 2FA code or password without it living forever in Discord."**
 
+For active operational guarantees, see the [warrant canary](./CANARY.md). Last verified: 2026-04-24.
+
 ---
 
 ## Logging policy
 
 Cinder logs operational events using note IDs only. Cinder does NOT log:
+
 - Note content or ciphertext
 - IP addresses
 - User-Agent strings
@@ -209,6 +224,7 @@ Note IDs are random nanoids and do not identify users.
 ## Roadmap
 
 ### ✅ V1 — Encrypted note service (shipped)
+
 - Server-blind storage (ciphertext + IV + crypto metadata only)
 - AES-GCM 256 client-side encryption via Web Crypto API
 - URL-fragment key transport (`#<id>.<key>`)
@@ -218,6 +234,7 @@ Note IDs are random nanoids and do not identify users.
 - Privacy-aware logging
 
 ### 🚧 V1.5 — Production-shape backend (next)
+
 - Migrate H2 → **PostgreSQL** with Flyway-managed migrations
 - **Custom Redis-backed token-bucket rate limiter** (atomic Lua scripts, per-IP + per-endpoint)
 - **View-burst detection** — auto-delete notes hit by anomalous read patterns (Redis-only, no PII)
@@ -227,6 +244,7 @@ Note IDs are random nanoids and do not identify users.
 - Deployment with Docker + docker-compose
 
 ### 🔮 V2 — Realtime collaborative notes
+
 - Add Node.js `realtime-service` (y-websocket protocol)
 - Encrypted CRDT sync — server relays opaque updates, never sees plaintext
 - Cursor presence + awareness (encrypted same way)
